@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User List</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+      h1 {
+        margin-right: 20;
+      }
+      header {
+        background-color: red;
+        color: white;
+        padding: 10px 0;
+      }
+
+      main {
+        padding: 20px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 10px;
+        text-align: left;
+      }
+
+      th {
+        background-color: #f2f2f2;
+      }
+
+      input[type="search"] {
+        width: 100%;
+        padding: 8px;
+        border-bottom-width: 1px solid #ddd;
+        box-sizing: border-box;
+        margin-bottom: 10px;
+      }
+
+      .image-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100px;
+      }
+
+      .image-container img {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>UBANAN & IBONA</h1>
+    </header>
+
+    <main>
+      <input type="search" id="searchBox" placeholder="Search..." />
+      <table>
+        <thead>
+          <tr>
+            <th>Image</th>
+            <th>Email</th>
+            <th>Password</th>
+          </tr>
+        </thead>
+        <tbody id="userTable">
+          <!-- Rows will be dynamically populated here -->
+        </tbody>
+      </table>
+    </main>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io(); // Connect to the backend
+      const userTable = document.getElementById("userTable");
+      const searchBox = document.getElementById("searchBox");
+
+      // Function to populate the table with user data
+      function populateTable(users) {
+        userTable.innerHTML = ""; // Clear existing rows
+
+        users.forEach((user) => {
+          const row = document.createElement("tr");
+
+          // Image cell
+          const imgCell = document.createElement("td");
+          imgCell.classList.add("image-container");
+          const img = document.createElement("img");
+          img.src = user.img || "../assets/defaultprofile.jpg"; // Fallback if no image URL
+          img.alt = "Profile Picture";
+          imgCell.appendChild(img);
+          row.appendChild(imgCell);
+
+          // Email cell
+          const emailCell = document.createElement("td");
+          emailCell.textContent = user.email;
+          row.appendChild(emailCell);
+
+          // Password cell
+          const passwordCell = document.createElement("td");
+          passwordCell.textContent = user.password;
+          row.appendChild(passwordCell);
+
+          userTable.appendChild(row);
+        });
+      }
+
+      // Listen for updates to user data
+      socket.on("users_data", (users) => {
+        populateTable(users);
+      });
+
+      // Filter functionality
+      searchBox.addEventListener("input", (e) => {
+        const filter = e.target.value.toLowerCase();
+        const rows = userTable.getElementsByTagName("tr");
+
+        Array.from(rows).forEach((row) => {
+          const email = row.cells[1].textContent.toLowerCase();
+          row.style.display = email.includes(filter) ? "" : "none";
+        });
+      });
+
+      // Request the initial list of users
+      socket.emit("get_users");
+    </script>
+  </body>
+</html>
